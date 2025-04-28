@@ -129,8 +129,6 @@ void drawMaze()
     drawTrophy(1.0f, 8.0f);
 }
 
-// Removed drawPlayer() completely
-
 void renderBitmapString(float x, float y, void *font, const char *string)
 {
     glRasterPos2f(x, y);
@@ -140,19 +138,78 @@ void renderBitmapString(float x, float y, void *font, const char *string)
     }
 }
 
+void drawMinimap()
+{
+    float mapSize = 200.0f;           // Size of the minimap (in pixels)
+    float cellSize = mapSize / 10.0f; // Each cell size in minimap
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, 800, 0, 600); // Set orthogonal projection
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glTranslatef(20, 380, 0); // Position minimap in the top-left corner
+
+    // Draw the maze on the minimap
+    for (int i = 0; i < 10; ++i)
+    {
+        for (int j = 0; j < 10; ++j)
+        {
+            if (maze[i][j] == 1)
+            {                                // Wall
+                glColor3f(0.2f, 0.3f, 0.7f); // Blue for walls
+            }
+            else if (food[i][j] == 1)
+            {                                // Food
+                glColor3f(1.0f, 1.0f, 1.0f); // White for food
+            }
+            else
+            {
+                glColor3f(0.0f, 0.0f, 0.0f); // Black for empty space
+            }
+
+            glBegin(GL_QUADS);
+            glVertex2f(i * cellSize, j * cellSize);
+            glVertex2f((i + 1) * cellSize, j * cellSize);
+            glVertex2f((i + 1) * cellSize, (j + 1) * cellSize);
+            glVertex2f(i * cellSize, (j + 1) * cellSize);
+            glEnd();
+        }
+    }
+
+    // Draw player position as a red square on the minimap
+    glColor3f(1.0f, 0.0f, 0.0f);         // Red for player
+    float px = (camX / 10.0f) * mapSize; // Scale player position to fit minimap
+    float pz = (camZ / 10.0f) * mapSize;
+    glBegin(GL_QUADS);
+    glVertex2f(px - 5, pz - 5); // Draw player as a small red square
+    glVertex2f(px + 5, pz - 5);
+    glVertex2f(px + 5, pz + 5);
+    glVertex2f(px - 5, pz + 5);
+    glEnd();
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
+    // 3D View
     gluLookAt(camX, 0.5f, camZ,
               camX + sin(angle), 0.5f, camZ - cos(angle),
               0, 1, 0);
 
     drawMaze();
-    // No drawPlayer()
 
-    // Points display
+    // Draw Points display
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -163,7 +220,6 @@ void display()
 
     char buffer[50];
     sprintf_s(buffer, "Points: %d", points);
-
     glColor3f(1, 1, 1);
     renderBitmapString(650, 570, GLUT_BITMAP_HELVETICA_18, buffer);
 
@@ -171,6 +227,9 @@ void display()
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
+
+    // Draw Minimap
+    drawMinimap();
 
     glutSwapBuffers();
 }
